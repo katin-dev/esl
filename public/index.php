@@ -1,7 +1,7 @@
 <?php
 
 require_once "../vendor/autoload.php";
-require_once "../App/Esl.php";
+require_once "../app/Esl.php";
 
 define('__ROOT__', realpath(__DIR__ . '/..'));
 

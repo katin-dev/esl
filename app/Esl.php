@@ -117,4 +117,14 @@ class Esl
 
     return $posts;
   }
+
+  public function addToCart($postURL)
+  {
+    $node = $this->fetch($postURL);
+    $a = $node->xpath('//a[@class="btn btn-default btn-buy"]');
+    if($a) {
+      $add2cartURL = 'https://secure3.eslpod.com' . $a[0]['href'];
+      echo $add2cartURL;
+    }
+  }
 }
