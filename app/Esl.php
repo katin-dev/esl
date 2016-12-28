@@ -36,8 +36,7 @@ class Esl
 
   public function saveData($data)
   {
-    $filename = __DIR__ . '/data.txt';
-    file_put_contents($filename, serialize($data));
+    file_put_contents($this->getDataFilename(), serialize($data));
   }
 
   public function fetch($url, $data = null)
@@ -87,54 +86,35 @@ class Esl
 
     return strpos($h4, 'Welcome') !== false;
   }
-}
 
-/*$config = require "config.php";
-$esl = new Esl($config['login'], $config['password']);
+  public function grabPosts()
+  {
+    $node = $this->fetch('https://secure3.eslpod.com/lesson-library');
+    $as = $node->xpath('//a[@type="button"]');
 
-if($esl->login()) {
-  $node = Esl::fetch('https://secure3.eslpod.com/lesson-library');
-  $as = $node->xpath('//a[@type="button"]');
-
-  $pages = [];
-  if($as) {
-    foreach ($as as $a) {
-      if(strpos($a, 'Daily English') !== false) {
-        $pages[] = 'https://secure3.eslpod.com/library/' . str_replace('../', '', $a['href']) . '/';
-      }
-    }
-  }
-
-  $links = [];
-  foreach ($pages as $page) {
-    $node = Esl::fetch($page);
-    $as = $node->xpath('//div[@class="col-sm-7"]/a');
+    $pages = [];
     if($as) {
       foreach ($as as $a) {
-        $links[] = [
-          'name' => (string) $a,
-          'href' => (string) $a['href']
-        ];
+        if(strpos($a, 'Daily English') !== false) {
+          $pages[] = 'https://secure3.eslpod.com/library/' . str_replace('../', '', $a['href']) . '/';
+        }
       }
     }
-  }
 
-  $data = $esl->getData();
-  $postNames = array_map(function ($post) { return $post['href']; }, $data['posts']);
-
-  $newPosts = [];
-  foreach ($links as $link) {
-    if( !in_array($link['href'], $postNames) ) {
-      $newPosts[] = $link;
+    $posts = [];
+    foreach ($pages as $page) {
+      $node = $this->fetch($page);
+      $as = $node->xpath('//div[@class="col-sm-7"]/a');
+      if($as) {
+        foreach ($as as $a) {
+          $posts[] = [
+            'name' => (string) $a,
+            'href' => (string) $a['href']
+          ];
+        }
+      }
     }
+
+    return $posts;
   }
-
-  $esl->saveData([
-    'posts' => $links
-  ]);
-
-  print_r($newPosts);
-
-} else {
-  echo "Fail";
-}*/
+}

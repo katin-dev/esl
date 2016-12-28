@@ -5,7 +5,7 @@ require_once "../App/Esl.php";
 
 define('__ROOT__', realpath(__DIR__ . '/..'));
 
-$config = require __ROOT__ . "/app/config.php";
+$config = require __ROOT__ . "/app/configs/config.php";
 $esl = new Esl($config['login'], $config['password'], __ROOT__ . '/data');
 
 $data = $esl->getData();
