@@ -1,0 +1,14 @@
+{
+    "name": "katin.dev/esl",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Sergey Katin",
+            "email": "katinsv@profi.ru"
+        }
+    ],
+    "require": {
+        "silex/silex": "^2.0",
+        "league/plates": "^3.3"
+    }
+}
