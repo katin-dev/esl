@@ -12,6 +12,18 @@ class Esl
     $this->password = $password;
   }
 
+  public function getData()
+  {
+    $filename = __DIR__ . '/data.txt';
+    return file_exists($filename) ? unserialize(file_get_contents($filename)) : ['posts' => []];
+  }
+
+  public function saveData($data)
+  {
+    $filename = __DIR__ . '/data.txt';
+    file_put_contents($filename, serialize($data));
+  }
+
   public static function fetch($url, $data = null)
   {
     $ch = curl_init($url);
@@ -63,6 +75,7 @@ class Esl
 
 $config = require "config.php";
 $esl = new Esl($config['login'], $config['password']);
+
 if($esl->login()) {
   $node = Esl::fetch('https://secure3.eslpod.com/lesson-library');
   $as = $node->xpath('//a[@type="button"]');
@@ -84,13 +97,27 @@ if($esl->login()) {
       foreach ($as as $a) {
         $links[] = [
           'name' => (string) $a,
-          'href' =>  $a['href']
+          'href' => (string) $a['href']
         ];
       }
     }
   }
 
-  print_r($links);
+  $data = $esl->getData();
+  $postNames = array_map(function ($post) { return $post['href']; }, $data['posts']);
+
+  $newPosts = [];
+  foreach ($links as $link) {
+    if( !in_array($link['href'], $postNames) ) {
+      $newPosts[] = $link;
+    }
+  }
+
+  $esl->saveData([
+    'posts' => $links
+  ]);
+
+  print_r($newPosts);
 
 } else {
   echo "Fail";
