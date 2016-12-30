@@ -39,7 +39,7 @@ class Esl
     file_put_contents($this->getDataFilename(), serialize($data));
   }
 
-  public function fetch($url, $data = null)
+  public function fetch($url, $data = null, $headers = null)
   {
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -51,6 +51,9 @@ class Esl
     if($data) {
       curl_setopt($ch, CURLOPT_POST, true);
       curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+    }
+    if($headers) {
+      curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     }
 
     $content = curl_exec($ch);
@@ -118,13 +121,74 @@ class Esl
     return $posts;
   }
 
+  public function getCoupon()
+  {
+    $url = 'https://secure3.eslpod.com/my-account/wc-smart-coupons/';
+    $node = $this->fetch($url);
+    $coupon = current($node->xpath('//div[@id="all_generated_coupon"]'));
+    if($coupon) {
+      return [
+        'remain' => $coupon ? (int) current($coupon->xpath('//span[@class="number"]')) : 0,
+        'id'     => $coupon ? (string) current($coupon->xpath('//div[@class="code"]')) : null
+      ];
+    }
+  }
+
+  /**
+   * Положить в корзину
+   * @param string $postURL
+   */
   public function addToCart($postURL)
   {
     $node = $this->fetch($postURL);
     $a = $node->xpath('//a[@class="btn btn-default btn-buy"]');
     if($a) {
       $add2cartURL = 'https://secure3.eslpod.com' . $a[0]['href'];
-      echo $add2cartURL;
+      $this->fetch($add2cartURL);
     }
   }
+
+  public function purchase($goods = [])
+  {
+    if( !$goods ) return true;
+
+    $coupon = $this->getCoupon();
+
+    if($coupon && $coupon['remain'] >= count($goods)) {
+      // Добавляем в корзину:
+      foreach ($goods as $goodURL) {
+        $this->addToCart($goodURL);
+      }
+
+      // Оформляем скидку:
+      $this->fetch('https://secure3.eslpod.com/?sc-page=cart&coupon-code=' . $coupon['id']);
+      // Формляем заказ:
+      $node = $this->fetch('https://secure3.eslpod.com/checkout/');
+      $nonce   = current($node->xpath('//input[@name="_wpnonce"]'));
+      $referer = current($node->xpath('//input[@name="_wp_http_referer"]'));
+
+      if($nonce && $referer) {
+        $data = [
+          'billing_first_name' => 'Sergey',
+          'billing_last_name' => 'Katin',
+          'billing_email' => 'gourry@mail.ru',
+          'languages' => 'Русский язык',
+          'billing_country' => 'RU',
+          'billing_address_1' => 'Tunnelny proezd',
+          'billing_address_2' => '',
+          'billing_city' => 'Naro-Fominsk',
+          'billing_state' => 'Moscow state',
+          'billing_postcode' => '143302',
+          '_wpnonce' => (string)$nonce['value'],
+          '_wp_http_referer' => (string)$referer['value']
+        ];
+
+        $this->fetch('https://secure3.eslpod.com/checkout/?wc-ajax=checkout', $data, ['X-Requested-With: XMLHttpRequest']);
+
+        return true;
+      }
+    }
+  }
+
+
 }
