@@ -190,5 +190,24 @@ class Esl
     }
   }
 
+  public function getAvailableLinks()
+  {
+    $node = $this->fetch('https://secure3.eslpod.com/my-account/downloads/');
+    $table = current($node->xpath('//table[@class="woocommerce-MyAccount-downloads shop_table shop_table_responsive"]'));
+    $links = [];
+    if($table) {
+      foreach ($table->xpath('//tr') as $key => $tr) {
+        if($key > 0) {
+          $links[] = [
+            'name' => (string) $tr->td[0]->a,
+            'link' => (string) $tr->td[3]->a['href']
+          ];
+        }
+      }
+    }
+
+    return $links;
+  }
+
 
 }
