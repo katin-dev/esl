@@ -60,9 +60,16 @@ class Esl
 
     file_put_contents($this->getLogFilename(), $content);
 
+    return $content;
+  }
+
+  /**
+   * @param string $content
+   * @return SimpleXMLElement
+   */
+  public function createNode($content) {
     $dom = new DOMDocument("1.0", "UTF8");
     @$dom->loadHTML($content);
-
     return simplexml_import_dom($dom);
   }
 
@@ -72,18 +79,18 @@ class Esl
     file_put_contents($this->getCookieFilename(), '');
 
     $url = 'https://secure3.eslpod.com/my-account/';
-    $node = self::fetch($url);
+    $node = $this->createNode($this->fetch($url));
 
     $nonce = (string) $node->xpath('//input[@id="woocommerce-login-nonce"]')[0]['value'];
     $ref   = (string) $node->xpath('//input[@name="_wp_http_referer"]')[0]['value'];
 
-    $node = self::fetch($url, [
+    $node = $this->createNode($this->fetch($url, [
       'username' => $this->login,
       'password' => $this->password,
       'woocommerce-login-nonce' => $nonce,
       '_wp_http_referer' => $ref,
       'login' => 'Login'
-    ]);
+    ]));
 
     $h4 = (string) $node->xpath('//h4')[0];
 
@@ -92,7 +99,7 @@ class Esl
 
   public function grabPosts()
   {
-    $node = $this->fetch('https://secure3.eslpod.com/lesson-library');
+    $node = $this->createNode($this->fetch('https://secure3.eslpod.com/lesson-library'));
     $as = $node->xpath('//a[@type="button"]');
 
     $pages = [];
@@ -106,7 +113,7 @@ class Esl
 
     $posts = [];
     foreach ($pages as $page) {
-      $node = $this->fetch($page);
+      $node = $this->createNode($this->fetch($page));
       $as = $node->xpath('//div[@class="col-sm-7"]/a');
       if($as) {
         foreach ($as as $a) {
@@ -124,7 +131,7 @@ class Esl
   public function getCoupon()
   {
     $url = 'https://secure3.eslpod.com/my-account/wc-smart-coupons/';
-    $node = $this->fetch($url);
+    $node = $this->createNode($this->fetch($url));
     $coupon = current($node->xpath('//div[@id="all_generated_coupon"]'));
     if($coupon) {
       return [
@@ -140,7 +147,7 @@ class Esl
    */
   public function addToCart($postURL)
   {
-    $node = $this->fetch($postURL);
+    $node = $this->createNode($this->fetch($postURL));
     $a = $node->xpath('//a[@class="btn btn-default btn-buy"]');
     if($a) {
       $add2cartURL = 'https://secure3.eslpod.com' . $a[0]['href'];
@@ -163,7 +170,7 @@ class Esl
       // Оформляем скидку:
       $this->fetch('https://secure3.eslpod.com/?sc-page=cart&coupon-code=' . $coupon['id']);
       // Формляем заказ:
-      $node = $this->fetch('https://secure3.eslpod.com/checkout/');
+      $node = $this->createNode($this->fetch('https://secure3.eslpod.com/checkout/'));
       $nonce   = current($node->xpath('//input[@name="_wpnonce"]'));
       $referer = current($node->xpath('//input[@name="_wp_http_referer"]'));
 
@@ -192,7 +199,7 @@ class Esl
 
   public function getAvailableLinks()
   {
-    $node = $this->fetch('https://secure3.eslpod.com/my-account/downloads/');
+    $node = $this->createNode($this->fetch('https://secure3.eslpod.com/my-account/downloads/'));
     $table = current($node->xpath('//table[@class="woocommerce-MyAccount-downloads shop_table shop_table_responsive"]'));
     $links = [];
     if($table) {
