@@ -8,16 +8,18 @@ if($esl->login()) {
   $links = $esl->getAvailableLinks();
 
   foreach ($links as $link) {
-    if($content = $esl->fetch($link['link'])) {
-      $name = trim($link['name']);
-      $name = preg_replace('/[^-_+\w\9 ]/u', '', $name);
-      if( strpos($name, 'MP3') !== false ) {
-        $filename = $name . '.mp3';
+
+    $name     = preg_replace('/[^-_+\w\9 ]/u', '', $link['name']);
+    $filename = __DIR__ . '/../public/podcasts/' . $name . (strpos($name, 'MP3') ? '.mp3' : '.pdf');
+
+    if( !file_exists($filename) ) {
+      echo "Get $name...";
+      if($content = $esl->fetch($link['link'])) {
+        file_put_contents($filename, $content);
+        echo "done\n";
       } else {
-        $filename = $name . '.pdf';
+        echo "failed\n";
       }
-      file_put_contents(__DIR__ . '/../data/' . $filename, $content);
-      echo $filename . "\n";
     }
   }
 }
