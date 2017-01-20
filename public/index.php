@@ -1,19 +1,6 @@
 <?php
-
-require_once "../vendor/autoload.php";
-require_once "../app/Esl.php";
-
-define('__ROOT__', realpath(__DIR__ . '/..'));
-
-$config = require __ROOT__ . "/app/configs/config.php";
-$esl = new Esl($config['login'], $config['password'], __ROOT__ . '/data');
-
-$data = $esl->getData();
-
-/* @var $app Silex\Application */
-$app   = new Silex\Application();
-$view  = new League\Plates\Engine(__ROOT__ . '/app/views');
-$app['debug'] = true;
+/* @var $app \Silex\Application */
+$app = require "../app/app.php";
 
 $app->get('/', function () use ($view, $esl) {
   $posts = $esl->getData()['posts'];
