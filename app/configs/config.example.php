@@ -7,5 +7,6 @@ return [
     'dbname' => 'esl',
     'username' => 'esl',
     'password' => 'eslpass'
-  ]
+  ],
+  'podcasts_dir' => __DIR__ . '/../../public/podcasts'
 ];

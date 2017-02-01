@@ -25,5 +25,6 @@ $app['view'] = function () use ($config) {
 $app['db'] = function () use ($config) {
   return new PDO('mysql:dbname='.$config['db']['dbname'].';host='.$config['db']['host'], $config['db']['username'], $config['db']['password']);
 };
+$app['conf'] = $config;
 $app['debug'] = true;
 return $app;

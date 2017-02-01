@@ -17,4 +17,11 @@ class Console extends Command {
   protected function getDb() {
     return $this->getSilexApplication()['db'];
   }
+
+  /**
+   * @return \App\Esl
+   */
+  protected function getEsl() {
+    return $this->getSilexApplication()['esl'];
+  }
 }
