@@ -1,11 +1,11 @@
 <?php
 
 namespace App\Console;
-use Knp\Command\Command;
+use App\Console;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class Grab extends Command
+class Grab extends Console
 {
   protected function configure()
   {
@@ -20,49 +20,49 @@ class Grab extends Command
     $app    = $this->getSilexApplication();
     $esl    = $app['esl'];
 
+    $this->getLogger()->info('Try to log in...');
     if($esl->login()) {
 
-      $app['monolog']->info("Logged in successefull");
-
+      $this->getLogger()->info('Success login');
+      $this->getLogger()->info("Try to grab posts...");
       $posts = $esl->grabPosts();
-      $app['monolog']->info(sprintf("Got %d posts", count($posts));
-      $posts = array_map(function ($post) { $post['id'] = preg_replace('/^.*?(\d+).*$/u', '\\1', $post['name']); return $post; }, $posts);
+      if($posts) {
 
-      // Save posts into DB
-      /* @var $stmt \PDOStatement */
-      $stmtFind   = $app['db']->prepare("SELECT * FROM podcast WHERE name = :name");
-      $stmtInsert = $app['db']->prepare("INSERT INTO podcast(name) VALUES (:name)");
-      $newPostCount = 0;
-      foreach ($posts as $post) {
-        $stmtFind->execute([
-          ':name' => $post['name']
-        ]);
-        if( !$stmt->fetch() ) {
-          $stmtInsert->bindParam(':name', $post['name']);
-          $stmtInsert->execute();
-          $newPostCount ++;
-        }
-      }
-
-      /*if($coupon = $esl->getCoupon()) {
-        $cnt = 0;
-        for($i = count($posts) - 1; $i >= 0 && $cnt < min($coupon['remain'], 3); $i--) {
-          if( empty($posts[$i]['purchased']) ) {
-            $links[] = $posts[$i]['href'];
-            $postsByID[$post['id']]['purchased'] = true;
-            $cnt ++;
-            echo $posts[$i]['name'] . "\n";
+        $this->getLogger()->info(sprintf("Got %d posts", count($posts)));
+        $newPostCount = 0;
+        $stmtFind     = $this->getDb()->prepare("SELECT * FROM podcast WHERE name = :name");
+        $stmtInsert   = $this->getDb()->prepare("INSERT INTO podcast(name) VALUES (:name)");
+        foreach ($posts as $post) {
+          // $id = preg_replace('/^.*?(\d+).*$/u', '\\1', $post['name']);
+          $stmtFind->execute([':name' => $post['name']]);
+          if ( !$stmtFind->fetch() ) {
+            $stmtInsert->bindParam(':name', $post['name']);
+            $stmtInsert->execute();
+            $newPostCount++;
           }
         }
-        $esl->purchase($links);
-        $esl->saveData(["posts" => $postsByID]);
-        echo "done\n";
-      }*/
 
-      $app['monolog']->error(sprintf("Found %s new podcasts", $newPostCount));
+        /*if($coupon = $esl->getCoupon()) {
+          $cnt = 0;
+          for($i = count($posts) - 1; $i >= 0 && $cnt < min($coupon['remain'], 3); $i--) {
+            if( empty($posts[$i]['purchased']) ) {
+              $links[] = $posts[$i]['href'];
+              $postsByID[$post['id']]['purchased'] = true;
+              $cnt ++;
+              echo $posts[$i]['name'] . "\n";
+            }
+          }
+          $esl->purchase($links);
+          $esl->saveData(["posts" => $postsByID]);
+          echo "done\n";
+        }*/
+
+        $this->getLogger()->info($newPostCount ? sprintf("Found %s new podcasts", $newPostCount) : 'No new podcasts');
+      } else {
+        $this->getLogger()->error("Failed to grab posts");
+      }
     } else {
-      $app['monolog']->error("Can't log in");
+      $this->getLogger()->error('Login failed');
     }
   }
-
 }

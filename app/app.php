@@ -16,8 +16,8 @@ $app->register(new \Knp\Provider\ConsoleServiceProvider(), array(
 $app->register(new Silex\Provider\MonologServiceProvider(), array(
   'monolog.logfile' => __ROOT__ . '/data/app.log',
 ));
-$app['esl'] = function () use ($config) {
-  return new \App\Esl($config['login'], $config['password'], __ROOT__ . '/data');
+$app['esl'] = function () use ($config, $app) {
+  return new \App\Esl($config['login'], $config['password'], __ROOT__ . '/data', $app['monolog']);
 };
 $app['view'] = function () use ($config) {
   return new \League\Plates\Engine(__ROOT__ . '/app/views');

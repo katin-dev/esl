@@ -7,12 +7,17 @@ class Esl
   private $login;
   private $password;
   private $dataPath;
+  /**
+   * @var \Monolog\Logger
+   */
+  private $logger;
 
-  public function __construct($login, $password, $dataPath)
+  public function __construct($login, $password, $dataPath, $logger = null)
   {
-    $this->login = $login;
+    $this->login    = $login;
     $this->password = $password;
     $this->dataPath = $dataPath;
+    $this->logger   = $logger;
   }
 
   public function getCookieFilename()
@@ -69,7 +74,7 @@ class Esl
    * @return SimpleXMLElement
    */
   public function createNode($content) {
-    $dom = new DOMDocument("1.0", "UTF8");
+    $dom = new \DOMDocument("1.0", "UTF8");
     @$dom->loadHTML($content);
     return simplexml_import_dom($dom);
   }
@@ -114,6 +119,7 @@ class Esl
 
     $posts = [];
     foreach ($pages as $page) {
+      $this->logger->info("Try to get podcasts from $page");
       $node = $this->createNode($this->fetch($page));
       $as = $node->xpath('//div[@class="col-sm-7"]/a');
       if($as) {
