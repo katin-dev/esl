@@ -17,9 +17,6 @@ class Download extends Console
   protected function execute(InputInterface $input, OutputInterface $output)
   {
     $this->getLogger()->info("Try to log in");
-
-    var_dump($this->getSilexApplication()['conf']);
-    exit();
     if( $this->getEsl()->login() ) {
       $this->getLogger()->info("Success logiin");
       $this->getLogger()->info("Try to get available podcasts");
