@@ -7,7 +7,6 @@ $app->get('/', function () use ($app) {
   $db = $app['db'];
   $stmt = $db->query("SELECT * FROM podcast ORDER BY id DESC");
   $podcasts = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-  var_dump($podcasts);
   return $app['view']->render("index", ['posts' => $podcasts]);
 });
 
