@@ -12,13 +12,8 @@
 <body>
     <ul>
     <?php foreach($posts as $post): ?>
-      <li><a href="<?=$post['href']?>"><?=$this->e($post['name'])?></a></li>
+      <li><a href="<?=$post['url']?>"><?=$this->e($post['name'])?></a></li>
     <?php endforeach; ?>
-
-        <div class="solution" data-taskid="{{taskID}}"></div>
     </ul>
-    <script>
-        var solution = new Solution({{ taskID }});
-    </script>
 </body>
 </html>
