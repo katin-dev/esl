@@ -23,7 +23,9 @@ $app['view'] = function () use ($config) {
   return new \League\Plates\Engine(__ROOT__ . '/app/views');
 };
 $app['db'] = function () use ($config) {
-  return new PDO('mysql:dbname='.$config['db']['dbname'].';host='.$config['db']['host'], $config['db']['username'], $config['db']['password']);
+  $pdo = new \PDO('mysql:dbname='.$config['db']['dbname'].';host='.$config['db']['host'], $config['db']['username'], $config['db']['password']);
+  $pdo->query("SET NAMES utf-8");
+  return $pdo;
 };
 $app['conf'] = $config;
 $app['debug'] = true;
