@@ -225,7 +225,10 @@ class Esl
   public function normName($name)
   {
     $name = preg_replace('/\s+/u', ' ', $name);
-    return preg_replace('/[^-_+\w\9 ]/u', '', $name);
+    $name = preg_replace('/[^-_+a-zA-Z\d ]/u', '', $name);
+    $name = preg_replace('/\s+/u', ' ', $name);
+    $name = trim($name);
+    return $name;
   }
 
   public function shortName($name)
