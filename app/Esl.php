@@ -103,7 +103,7 @@ class Esl
     return strpos($h4, 'Welcome') !== false;
   }
 
-  public function grabPosts()
+  public function grabPosts($saveCallback)
   {
     $node = $this->createNode($this->fetch('https://secure3.eslpod.com/lesson-library'));
     $as = $node->xpath('//a[@type="button"]');
@@ -117,19 +117,18 @@ class Esl
       }
     }
 
-    $posts = [];
     foreach ($pages as $page) {
       $this->logger->info("Try to get podcasts from $page");
       $node = $this->createNode($this->fetch($page));
       $as = $node->xpath('//div[@class="col-sm-7"]/a');
-      if($as) {
-        foreach ($as as $a) {
-          $posts[] = [
-            'name' => (string) $a,
-            'href' => (string) $a['href']
-          ];
-        }
-      }
+      $posts = array_map(function ($a) {
+        return [
+          'id'   => $this->shortName((string) $a),
+          'name' => (string) $a,
+          'href' => (string) $a['href']
+        ];
+      }, $as ?: []);
+      call_user_func_array($saveCallback, [$posts]);
     }
 
     return $posts;
@@ -223,5 +222,17 @@ class Esl
     return $links;
   }
 
+  public function normName($name)
+  {
+    $name = preg_replace('/\s+/u', ' ', $name);
+    return preg_replace('/[^-_+\w\9 ]/u', '', $name);
+  }
+
+  public function shortName($name)
+  {
+    if(preg_match('/^Daily\sEnglish\s(\d+)/iu', $name, $m)) {
+      return 'DE' . $m[1];
+    }
+  }
 
 }

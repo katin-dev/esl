@@ -24,7 +24,7 @@ class Download extends Console
         $this->getLogger()->info(sprintf("Got %d available links to download", count($links)));
 
         foreach ($links as $link) {
-          $name     = preg_replace('/[^-_+\w\9 ]/u', '', $link['name']);
+          $name     = $this->getEsl()->normName($link['name']);
           $dirname  = $this->getSilexApplication()['conf']['podcasts_dir'];
           $filename = $dirname .  '/' . $name . (strpos($name, 'MP3') ? '.mp3' : '.pdf');
           if( !file_exists($filename) ) {

@@ -25,17 +25,16 @@ class Grab extends Console
 
       $this->getLogger()->info('Success login');
       $this->getLogger()->info("Try to grab posts...");
-      $posts = $esl->grabPosts();
-      if($posts) {
-
+      $esl->grabPosts(function ($posts) {
         $this->getLogger()->info(sprintf("Got %d posts", count($posts)));
         $newPostCount = 0;
-        $stmtFind     = $this->getDb()->prepare("SELECT * FROM podcast WHERE name = :name");
-        $stmtInsert   = $this->getDb()->prepare("INSERT INTO podcast(name, url) VALUES (:name, :url)");
+        $stmtFind     = $this->getDb()->prepare("SELECT * FROM podcast WHERE slug = :slug");
+        $stmtInsert   = $this->getDb()->prepare("INSERT INTO podcast(slug, name, url) VALUES (:slug, :name, :url)");
         foreach ($posts as $post) {
-          // $id = preg_replace('/^.*?(\d+).*$/u', '\\1', $post['name']);
-          $stmtFind->execute([':name' => $post['name']]);
+          $post['name'] = $this->getEsl()->normName($post['name']);
+          $stmtFind->execute([':slug' => $post['id']]);
           if ( !$stmtFind->fetch() ) {
+            $stmtInsert->bindParam(':slug',$post['id']);
             $stmtInsert->bindParam(':name',$post['name']);
             $stmtInsert->bindParam(':url', $post['href']);
             $stmtInsert->execute();
@@ -44,9 +43,7 @@ class Grab extends Console
         }
 
         $this->getLogger()->info($newPostCount ? sprintf("Found %s new podcasts", $newPostCount) : 'No new podcasts');
-      } else {
-        $this->getLogger()->error("Failed to grab posts");
-      }
+      });
     } else {
       $this->getLogger()->error('Login failed');
     }
