@@ -23,17 +23,43 @@ class Download extends Console
       if($links = $this->getEsl()->getAvailableLinks()) {
         $this->getLogger()->info(sprintf("Got %d available links to download", count($links)));
 
+        $findPodcastStmt = $this->getDb()->prepare("SELECT * FROM podcast WHERE slug = :slug");
+        $findFileStmt = $this->getDb()->prepare("SELECT * FROM file WHERE podcast_id = :podcast_id AND filename = :filename");
+        $insertFileStmt = $this->getDb()->prepare("INSERT INTO file(podcast_id, type, filename) VALUES (:podcast_id, :type, :filename)");
+
         foreach ($links as $link) {
-          $name     = $this->getEsl()->normName($link['name']);
-          $dirname  = $this->getSilexApplication()['conf']['podcasts_dir'];
-          $filename = $dirname .  '/' . $name . (strpos($name, 'MP3') ? '.mp3' : '.pdf');
-          if( !file_exists($filename) ) {
-            $this->getLogger()->info(sprintf("Try to download \"%s\"", $name));
-            if($content = $this->getEsl()->fetch($link['link'])) {
-              file_put_contents($filename, $content);
-              $this->getLogger()->info("Success download");
-            } else {
-              $this->getLogger()->error(sprintf("Fail to download %s", $name));
+
+          $findPodcastStmt->execute([
+            'slug' => $this->getEsl()->shortName(trim($link['name']))
+          ]);
+          $podcast = $findPodcastStmt->fetch(\PDO::FETCH_ASSOC);
+
+          if($podcast) {
+            $name = trim($link['name']);
+            $filetype = strpos($name, 'MP3') ? '.mp3' : '.pdf';
+            $name = preg_replace('/–\s+(MP3|PDF)$/u', '', $name);
+            $name = $this->getEsl()->normName($name);
+            $filename = $name . $filetype;
+
+            $findFileStmt->execute([
+              'podcast_id' => $podcast['id'],
+              'filename'   => $filename
+            ]);
+            $file = $findFileStmt->fetch(\PDO::FETCH_ASSOC);
+            if( !$file ) {
+              $dirname  = realpath($this->getSilexApplication()['conf']['podcasts_dir']);
+              $this->getLogger()->info(sprintf("Try to download \"%s\"", $name));
+              if($content = $this->getEsl()->fetch($link['link'])) {
+                file_put_contents($dirname . DIRECTORY_SEPARATOR . $filename, $content);
+                $insertFileStmt->execute([
+                  'podcast_id' => $podcast['id'],
+                  'type' => strpos($filename, '.mp3') ? 'mp3' : 'pdf',
+                  'filename' => $filename
+                ]);
+                $this->getLogger()->info("Success download");
+              } else {
+                $this->getLogger()->error(sprintf("Fail to download %s", $name));
+              }
             }
           }
         }
