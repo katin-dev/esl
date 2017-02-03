@@ -24,6 +24,7 @@ class Download extends Console
         $this->getLogger()->info(sprintf("Got %d available links to download", count($links)));
 
         $findPodcastStmt = $this->getDb()->prepare("SELECT * FROM podcast WHERE slug = :slug");
+        $updatePodcastStmt = $this->getDb()->prepare("UPDATE podcast SET purchased = 1, purchased_dt = NOW() WHERE id = :id AND purchased = 0");
         $findFileStmt = $this->getDb()->prepare("SELECT * FROM file WHERE podcast_id = :podcast_id AND filename = :filename");
         $insertFileStmt = $this->getDb()->prepare("INSERT INTO file(podcast_id, type, filename) VALUES (:podcast_id, :type, :filename)");
 
@@ -39,7 +40,7 @@ class Download extends Console
             $filetype = strpos($name, 'MP3') ? '.mp3' : '.pdf';
             $name = preg_replace('/–\s+(MP3|PDF)$/u', '', $name);
             $name = $this->getEsl()->normName($name);
-            $filename = $name . $filetype;
+            $filename = preg_replace('/\s/u', '_', $name) . $filetype;
 
             $findFileStmt->execute([
               'podcast_id' => $podcast['id'],
@@ -55,6 +56,9 @@ class Download extends Console
                   'podcast_id' => $podcast['id'],
                   'type' => strpos($filename, '.mp3') ? 'mp3' : 'pdf',
                   'filename' => $filename
+                ]);
+                $updatePodcastStmt->execute([
+                  'id' => $podcast['id']
                 ]);
                 $this->getLogger()->info("Success download");
               } else {
