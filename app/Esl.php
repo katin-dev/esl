@@ -138,12 +138,17 @@ class Esl
   {
     $url = 'https://secure3.eslpod.com/my-account/wc-smart-coupons/';
     $node = $this->createNode($this->fetch($url));
-    $coupon = current($node->xpath('//div[@id="all_generated_coupon"]'));
-    if($coupon) {
-      return [
-        'remain' => $coupon ? (int) current($coupon->xpath('//span[@class="number"]')) : 0,
-        'id'     => $coupon ? (string) current($coupon->xpath('//div[@class="code"]')) : null
-      ];
+    $coupons = $node->xpath('//div[@id="all_generated_coupon"]/div');
+    if($coupons) {
+      foreach ($coupons as $coupon) {
+        $number = current($coupon->xpath('details//span[@class="number"]'));
+        if($number) {
+          return [
+            'remain' => (int) $number,
+            'id'     => (string) current($coupon->xpath('details//div[@class="code"]'))
+          ];
+        }
+      }
     }
   }
 
@@ -161,11 +166,9 @@ class Esl
     }
   }
 
-  public function purchase($goods = [])
+  public function purchase($goods = [], $coupon)
   {
     if( !$goods ) return true;
-
-    $coupon = $this->getCoupon();
 
     if($coupon && $coupon['remain'] >= count($goods)) {
       // Добавляем в корзину:
@@ -196,9 +199,13 @@ class Esl
           '_wp_http_referer' => (string)$referer['value']
         ];
 
-        $this->fetch('https://secure3.eslpod.com/checkout/?wc-ajax=checkout', $data, ['X-Requested-With: XMLHttpRequest']);
-
-        return true;
+        $content = $this->fetch('https://secure3.eslpod.com/checkout/?wc-ajax=checkout', $data, ['X-Requested-With: XMLHttpRequest']);
+        $error = json_decode($content, 'true');
+        if( !$error || $error['result'] != 'failure') {
+          return true;
+        } else {
+          $this->logger->error($content);
+        }
       }
     }
   }

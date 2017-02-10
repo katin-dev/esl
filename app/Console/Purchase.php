@@ -20,17 +20,24 @@ class Purchase extends Console
       $this->getLogger()->info("Success login");
       if($coupon = $this->getEsl()->getCoupon()) {
         $this->getLogger()->info(sprintf("I have a coupon on %s podcasts", $coupon['remain']));
-        $sql = sprintf("SELECT * FROM podcast WHERE purchased = 0 ORDER BY id DESC LIMIT %d", $coupon['remain']);
-        $stmt = $this->getDb()->query($sql);
-        $podcasts = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        if($podcasts) {
-          $this->getLogger()->info(sprintf("Try to purchase %d podcasts", count($podcasts)));
-          $this->getEsl()->purchase(array_column($podcasts, 'url'));
-          $this->getLogger()->info(sprintf("Purchased"));
+        if($coupon['remain']) {
+          $sql = sprintf("SELECT * FROM podcast WHERE purchased = 0 ORDER BY id DESC LIMIT 1");
+          $stmt = $this->getDb()->query($sql);
+          $podcasts = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+          if ($podcasts) {
+            $this->getLogger()->info(sprintf("Try to purchase %d podcasts", count($podcasts)));
+            if($this->getEsl()->purchase(array_column($podcasts, 'url'), $coupon)) {
+              $this->getLogger()->info(sprintf("Purchased"));
 
-          $sql = "UPDATE podcast SET purchased = 1, purchased_dt = NOW() WHERE id IN (".implode(",", array_column($podcasts, "id")).")";
-          $this->getDb()->query($sql);
-          $this->getLogger()->info(sprintf("Updated in DB. Try to download."));
+              $sql = "UPDATE podcast SET purchased = 1, purchased_dt = NOW() WHERE id IN (" . implode(",", array_column($podcasts, "id")) . ")";
+              $this->getDb()->query($sql);
+              $this->getLogger()->info(sprintf("Updated in DB. Try to download."));
+            } else {
+              $this->getLogger()->error("Failed to purchase");
+            }
+          }
+        } else {
+          $this->getLogger()->error("Coupon is empty");
         }
       }
     } else {
